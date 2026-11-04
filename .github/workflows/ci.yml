@@ -1,0 +1,25 @@
+name: CI
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'upgrade/**']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+      - name: Cache public tokenizer data
+        run: uv run --locked python -c 'import tiktoken; tiktoken.encoding_for_model("gpt-4o")'
+      - name: Run isolated tests (no production credentials)
+        env:
+          ZAD_OFFLINE_TESTS: '1'
+        run: uv run --locked pytest --cov=src/zotero_arxiv_daily --cov-report=term-missing
